@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+html,body{background:transparent;margin:0;padding:0}
+.fk-root{width:100%;box-sizing:border-box;font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC","Hiragino Sans GB",sans-serif}
+.fk-root *{box-sizing:border-box}
+:root{
+  --bg:#f7f0dc;--panel:#efe4c8;--border:rgba(90,70,30,0.16);
+  --accent:#b23368;--accent2:#8a5aa8;--gold:#a8763a;--good:#5a8f5e;
+  --t1:#3a2e18;--t2:#6b5a3a;--t3:#9c8a63;--t4:#b8a878;
+  --div:rgba(90,70,30,0.12);--div2:rgba(90,70,30,0.05);
+  --hd:linear-gradient(160deg,#f2e6c8,#ecdcb4 50%,#f2e6c8)
+}
+
+/* ---- 正文 ---- */
+.mt-box{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:10px;box-shadow:0 4px 18px rgba(90,70,30,0.08)}
+.mt-box p{margin:0 0 1em;font-size:15px;line-height:1.95;color:var(--t1);word-break:break-word}
+.mt-box p:last-child{margin-bottom:0}
+.mt-box .dialogue{color:var(--accent);font-weight:500}
+.mt-box .thought{color:var(--accent2);font-style:italic}
+.mt-empty{color:var(--t3);font-size:13px;text-align:center;padding:10px 0}
+
+/* ---- 选项 ---- */
+.opt-box{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden}
+.opt-header{display:flex;align-items:center;gap:8px;padding:11px 18px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--t2);user-select:none}
+.opt-header .car{margin-left:auto;color:var(--t4);font-size:11px;transition:transform .2s ease}
+.opt-box.open .opt-header .car{transform:rotate(90deg)}
+.opt-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.opt-box.open .opt-body{max-height:600px}
+.opt-list{padding:2px 14px 14px;display:flex;flex-direction:column;gap:8px}
+.opt-btn{width:100%;text-align:left;padding:11px 14px;border:1px solid var(--div);border-radius:10px;background:var(--div2);color:var(--t1);font-size:13.5px;line-height:1.5;cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .1s ease}
+.opt-btn:hover{border-color:var(--accent);background:rgba(178,51,104,0.06)}
+.opt-btn:active{transform:scale(.99)}
+
+/* ---- 状态栏 ---- */
+.hs{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(90,70,30,0.08)}
+.hs-head{background:var(--hd);padding:16px 20px;position:relative;border-bottom:1px solid var(--border)}
+.hs-badge{position:absolute;top:12px;right:18px;font-size:8px;color:rgba(58,46,24,0.25);letter-spacing:3px;text-transform:uppercase;font-weight:600}
+.hs-dt{font-size:17px;font-weight:700;color:var(--t1)}
+.hs-loc{font-size:12.5px;color:var(--t3);margin-top:3px}
+.hs-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.hs-tag{border:1px solid var(--div);border-radius:6px;padding:3px 9px;background:rgba(255,255,255,0.4);font-size:10.5px}
+.hs-tag .l{color:var(--t4);margin-right:4px;font-size:9.5px}
+.hs-tag .v{color:var(--gold);font-weight:600}
+
+.thread-capsule{margin:10px 16px;border:1px solid var(--div);background:var(--div2);border-radius:99px;overflow:hidden;transition:border-radius .3s ease}
+.thread-capsule.open{border-radius:12px}
+.thread-capsule-head{display:flex;align-items:center;gap:8px;padding:9px 15px;font-size:11.5px;font-weight:600;color:var(--t1);cursor:pointer;user-select:none}
+.thread-capsule-head::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent2);flex-shrink:0}
+.thread-capsule-head .car{margin-left:auto;color:var(--t4);font-size:10px;transition:transform .2s ease}
+.thread-capsule.open .thread-capsule-head .car{transform:rotate(90deg)}
+.thread-capsule-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.thread-capsule.roster-capsule.open .thread-capsule-body{max-height:900px}
+.thread-capsule.threads-capsule.open .thread-capsule-body{max-height:220px}
+
+.roster{padding:2px 14px 10px;display:flex;flex-direction:column;gap:6px}
+.roster-row{border:1px solid var(--div);border-radius:10px;background:rgba(255,255,255,0.35);overflow:hidden;transition:border-color .18s ease}
+.roster-row-head{display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;padding:8px 11px}
+.roster-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent2);background:rgba(255,255,255,0.55);border:1px solid var(--div);flex-shrink:0}
+.roster-name{font-size:12.5px;font-weight:600;color:var(--t1)}
+.roster-rel{font-size:10px;color:var(--t4);margin-left:5px}
+.roster-status{font-size:10.5px;color:var(--t3);margin-top:2px;word-break:break-word}
+.roster-side{display:flex;align-items:center;gap:7px}
+.roster-tag{font-size:9px;letter-spacing:.04em;padding:2px 8px;border-radius:99px;border:1px solid var(--div);white-space:nowrap}
+.roster-tag.present{color:var(--good);border-color:rgba(90,143,94,0.4);background:rgba(90,143,94,0.08)}
+.roster-tag.absent{color:var(--t4)}
+.roster-row.present{cursor:pointer}
+.roster-row.present:hover{border-color:var(--accent)}
+.roster-row.absent{opacity:.55}
+.roster-car{color:var(--t4);font-size:10px;transition:transform .18s ease;flex-shrink:0}
+.roster-row.open .roster-car{transform:rotate(90deg);color:var(--accent)}
+.roster-detail{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.roster-row.open .roster-detail{max-height:340px}
+.roster-detail-inner{padding:2px 11px 11px 53px;font-size:10.5px;line-height:1.85;color:var(--t2);border-top:1px solid var(--div);margin-top:1px;padding-top:8px;word-break:break-word}
+.roster-detail-inner b{color:var(--accent);font-weight:600}
+
+.ledger{padding:2px 15px 12px}
+.ledger-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--div);font-size:11px}
+.ledger-row:last-child{border-bottom:none}
+.ledger-key{color:var(--t3)}
+.ledger-val{font-family:"Courier New",Consolas,monospace;color:var(--t1);font-size:10.5px;text-align:right}
+.ledger-row.locked .ledger-val{display:flex;align-items:center;gap:6px;color:var(--accent)}
+.ledger-row.locked svg{width:11px;height:11px;flex-shrink:0}
+.ledger-row.locked .bar{display:inline-block;width:44px;height:7px;border-radius:2px;background:currentColor;opacity:.5}
+
+.hs-thought{border-left:2px solid var(--accent);padding:8px 10px;margin:10px 16px 16px;color:var(--t2);font-size:10.5px;line-height:1.75;background:rgba(178,51,104,0.05);border-radius:0 6px 6px 0}
+.hs-thought .tn{color:var(--accent2);font-weight:600}
+.hs-thought-line{margin-top:3px}
+.hs-thought-line:first-child{margin-top:0}
+
+.fk-debug{width:100%;background:#2a1a1a;border:1px dashed #b23368;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-family:"Courier New",Consolas,monospace;font-size:10.5px;line-height:1.7;color:#e8c8d8;white-space:pre-wrap;word-break:break-all}
+.fk-debug b{color:#ffb0d0}
+</style>
+
+</head>
+<body>
+<div class="fk-root" id="fk-root">
+  <div class="fk-debug" id="fk-debug">诊断面板加载中……</div>
+  <div class="mt-box"><div id="mt-body"><div class="mt-empty">等待剧情生成……</div></div></div>
+
+  <div class="opt-box" id="opt-box">
+    <div class="opt-header" id="opt-header">选项<span class="car">›</span></div>
+    <div class="opt-body"><div class="opt-list" id="opt-list"></div></div>
+  </div>
+
+  <div class="hs">
+    <div class="hs-head">
+      <div class="hs-badge">STATUS</div>
+      <div class="hs-dt" id="hs-dt">--/-- --:--</div>
+      <div class="hs-loc" id="hs-loc">--</div>
+      <div class="hs-tags" id="hs-tags"></div>
+    </div>
+
+    <div class="thread-capsule roster-capsule" id="roster-capsule">
+      <div class="thread-capsule-head">人物关系<span class="car">›</span></div>
+      <div class="thread-capsule-body"><div class="roster" id="roster"></div></div>
+    </div>
+
+    <div class="thread-capsule threads-capsule" id="threads-capsule">
+      <div class="thread-capsule-head">暗线<span class="car">›</span></div>
+      <div class="thread-capsule-body"><div class="ledger" id="ledger"></div></div>
+    </div>
+
+    <div class="hs-thought" id="npc-thoughts"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  try{ var _d0=document.getElementById('fk-debug'); if(_d0) _d0.textContent = '脚本已开始执行，正在初始化……'; }catch(_e0){}
+
+try{
+
+  var CHAR_DEFS = [
+    {key:'白颖', rel:'妻子'},
+    {key:'李萱诗', rel:'母亲'},
+    {key:'郝江化', rel:'继父'},
+    {key:'徐琳', rel:'母亲挚友'},
+    {key:'王诗芸', rel:'郝家成员'},
+    {key:'何晓月', rel:'郝家成员'},
+    {key:'吴彤', rel:'郝家成员'},
+    {key:'岑筱薇', rel:'郝家旧识'},
+    {key:'郝小天', rel:'干弟弟'},
+    {key:'童佳慧', rel:'岳母'}
+  ];
+  var FIELD_LABELS = ['位置','穿着','动作','内心','嘴','乳房','下体','鸡巴','屁眼'];
+  var lastRawText = '';
+
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function parseCharState(raw){
+    if(!raw) return null;
+    var trimmed = String(raw).trim();
+    if(!trimmed || trimmed === '不在场') return null;
+    var fields = {};
+    trimmed.split('｜').forEach(function(seg){
+      var idx = seg.indexOf('：');
+      if(idx === -1) idx = seg.indexOf(':');
+      if(idx === -1) return;
+      var key = seg.slice(0, idx).trim();
+      var val = seg.slice(idx + 1).trim();
+      if(key) fields[key] = val;
+    });
+    return Object.keys(fields).length ? fields : null;
+  }
+
+  function renderMainText(text){
+    var box = document.getElementById('mt-body');
+    if(!text){ box.innerHTML = '<div class="mt-empty">等待剧情生成……</div>'; return; }
+    var html = text.split(/\n+/).map(function(s){ return s.trim(); }).filter(Boolean).map(function(p){
+      var colored = esc(p)
+        .replace(/“([^”]*)”/g, '<span class="dialogue">“$1”</span>')
+        .replace(/《([^》]*)》/g, '<span class="thought">$1</span>');
+      return '<p>' + colored + '</p>';
+    }).join('');
+    box.innerHTML = html || '<div class="mt-empty">等待剧情生成……</div>';
+  }
+
+  function sendToInput(text){
+    var cmd = '/setinput ' + String(text).replace(/[\r\n]+/g, ' ');
+    try{
+      if(typeof triggerSlash === 'function'){ triggerSlash(cmd); return; }
+      if(typeof executeSlashCommandsWithOptions === 'function'){ executeSlashCommandsWithOptions(cmd); return; }
+      if(typeof executeSlashCommands === 'function'){ executeSlashCommands(cmd); return; }
+    }catch(e){ console.error('[前端卡] 发送输入框失败', e); }
+  }
+
+  function renderOptions(options){
+    var list = document.getElementById('opt-list');
+    list.innerHTML = '';
+    options.forEach(function(opt){
+      var payload = opt.replace(/^\d+[\.\、]\s*/, '');
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'opt-btn';
+      btn.textContent = opt;
+      btn.addEventListener('click', function(){ sendToInput(payload); });
+      list.appendChild(btn);
+    });
+  }
+
+  function renderTags(stat){
+    var sys = stat['系统'] || {};
+    var zj = stat['左京'] || {};
+    var plot = stat['剧情'] || {};
+    document.getElementById('hs-dt').textContent = (sys['日期'] || '--') + ' ' + (sys['时间'] || '--');
+    document.getElementById('hs-loc').textContent = sys['当前地点'] || '--';
+    var tags = [
+      {v: plot['当前阶段']},
+      {l:'对母亲好感', v: zj['对母亲好感度']},
+      {l:'对郝叔', v: zj['对郝叔态度']},
+      {l:'对白颖', v: zj['与白颖关系']}
+    ];
+    document.getElementById('hs-tags').innerHTML = tags.filter(function(t){ return t.v !== undefined && t.v !== null && t.v !== ''; }).map(function(t){
+      return '<div class="hs-tag">' + (t.l ? '<span class="l">'+esc(t.l)+'</span>' : '') + '<span class="v">'+esc(t.v)+'</span></div>';
+    }).join('');
+  }
+
+  function renderRoster(scene){
+    var root = document.getElementById('roster');
+    root.innerHTML = CHAR_DEFS.map(function(def, i){
+      var raw = scene[def.key + '状态'];
+      var fields = parseCharState(raw);
+      var present = !!fields;
+      var detail = '';
+      if(present){
+        detail = FIELD_LABELS.filter(function(k){ return fields[k] !== undefined; }).map(function(k){
+          return '<b>' + esc(k) + '</b> ' + esc(fields[k]);
+        }).join('<br>');
+      }
+      return '' +
+        '<div class="roster-row' + (present ? ' present' : ' absent') + '" data-idx="' + i + '">' +
+          '<div class="roster-row-head">' +
+            '<div class="roster-avatar">' + esc(def.key.slice(0,1)) + '</div>' +
+            '<div>' +
+              '<span class="roster-name">' + esc(def.key) + '</span><span class="roster-rel">· ' + esc(def.rel) + '</span>' +
+              (present ? '<div class="roster-status">' + esc(fields['动作'] || fields['位置'] || '') + '</div>' : '') +
+            '</div>' +
+            '<div class="roster-side"><span class="roster-tag ' + (present?'present':'absent') + '">' + (present?'在场':'不在场') + '</span>' +
+              (present ? '<span class="roster-car">›</span>' : '') +
+            '</div>' +
+          '</div>' +
+          (present ? '<div class="roster-detail"><div class="roster-detail-inner">' + detail + '</div></div>' : '') +
+        '</div>';
+    }).join('');
+
+    root.querySelectorAll('.roster-row.present').forEach(function(row){
+      row.querySelector('.roster-row-head').addEventListener('click', function(){
+        row.classList.toggle('open');
+      });
+    });
+  }
+
+  function renderThreads(dark){
+    dark = dark || {};
+    var zhiqing = dark['左京对童佳慧真相知情度'] || '不知情';
+    var tjhLocked = zhiqing === '不知情';
+    var rows = [
+      {k:'左京与徐琳', v: dark['左京与徐琳']},
+      {k:'左京与岑筱薇', v: dark['左京与岑筱薇']}
+    ];
+    var html = rows.filter(function(r){ return r.v !== undefined; }).map(function(r){
+      return '<div class="ledger-row"><span class="ledger-key">'+esc(r.k)+'</span><span class="ledger-val">'+esc(r.v)+'</span></div>';
+    }).join('');
+    if(dark['童佳慧真实处境'] !== undefined){
+      if(tjhLocked){
+        html += '<div class="ledger-row locked"><span class="ledger-key">童佳慧真实处境</span><span class="ledger-val"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="9" rx="1.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.8"/></svg><span class="bar"></span></span></div>';
+      } else {
+        html += '<div class="ledger-row"><span class="ledger-key">童佳慧真实处境</span><span class="ledger-val">'+esc(dark['童佳慧真实处境'])+'</span></div>';
+      }
+    }
+    document.getElementById('ledger').innerHTML = html;
+  }
+
+  function renderThoughts(scene){
+    var raw = scene['NPC内心'] || '';
+    var lines = String(raw).split(/\n+/).map(function(s){ return s.trim(); }).filter(Boolean);
+    var box = document.getElementById('npc-thoughts');
+    if(!lines.length){ box.innerHTML = ''; box.style.display = 'none'; return; }
+    box.style.display = '';
+    box.innerHTML = lines.map(function(line, i){
+      var idx = line.indexOf('：');
+      if(idx === -1) idx = line.indexOf(':');
+      var name = idx === -1 ? '' : line.slice(0, idx);
+      var content = idx === -1 ? line : line.slice(idx + 1);
+      return '<div class="hs-thought-line"' + (i>0?' style="margin-top:4px"':'') + '><span class="tn">' + esc(name) + '</span> ' + esc(content) + '</div>';
+    }).join('');
+  }
+
+  function extractLastTag(rawText, tag){
+    var re = new RegExp('<' + tag + '>([\\s\\S]*?)<\\/' + tag + '>', 'g');
+    var m = rawText.match(re);
+    if(!m) return '';
+    var last = m[m.length - 1];
+    return last.replace(new RegExp('<\\/?' + tag + '>', 'g'), '').trim();
+  }
+
+  function updateDebugPanel(lines){
+    var el = document.getElementById('fk-debug');
+    if(el) el.innerHTML = lines.map(function(l){ return esc(l); }).join('\n');
+  }
+
+  async function updateDisplay(){
+    var dbg = [];
+    dbg.push('[全局函数检测]');
+    ['getCurrentMessageId','getChatMessages','Mvu','waitGlobalInitialized','triggerSlash','executeSlashCommandsWithOptions','executeSlashCommands'].forEach(function(name){
+      var exists = (typeof window[name] !== 'undefined');
+      dbg.push(name + ' : ' + (exists ? '存在(' + (typeof window[name]) + ')' : '不存在'));
+    });
+
+    var messageId;
+    try{
+      messageId = getCurrentMessageId();
+      dbg.push('getCurrentMessageId() = ' + JSON.stringify(messageId));
+    }catch(e){
+      dbg.push('getCurrentMessageId() 报错: ' + e.message);
+      updateDebugPanel(dbg);
+      return;
+    }
+
+    var messages;
+    try{
+      messages = getChatMessages(messageId);
+      dbg.push('getChatMessages() 返回条数 = ' + (messages ? messages.length : 'null/undefined'));
+    }catch(e){
+      dbg.push('getChatMessages() 报错: ' + e.message);
+      updateDebugPanel(dbg);
+      return;
+    }
+
+    var rawText = (messages && messages[0] && messages[0].message) || '';
+    dbg.push('原始文本长度 = ' + rawText.length);
+    dbg.push('原始文本前80字 = ' + JSON.stringify(rawText.slice(0, 80)));
+
+    var mainTextFound = extractLastTag(rawText, 'maintext');
+    var optionBlockFound = extractLastTag(rawText, 'option');
+    dbg.push('找到 <maintext> = ' + (mainTextFound ? '是，长度' + mainTextFound.length : '否'));
+    dbg.push('找到 <option> = ' + (optionBlockFound ? '是，长度' + optionBlockFound.length : '否'));
+
+    if(rawText === lastRawText){
+      dbg.push('（文本与上次相同，跳过重新渲染，仅刷新诊断信息）');
+      updateDebugPanel(dbg);
+      return;
+    }
+    lastRawText = rawText;
+
+    renderMainText(mainTextFound);
+    var options = optionBlockFound ? optionBlockFound.split('\n').map(function(s){ return s.trim(); }).filter(Boolean) : [];
+    renderOptions(options);
+
+    try{
+      var mvuData = Mvu.getMvuData({ type: 'message', message_id: messageId });
+      dbg.push('Mvu.getMvuData() 成功，stat_data 存在 = ' + !!(mvuData && mvuData.stat_data));
+      var stat = (mvuData && mvuData.stat_data) || {};
+      renderTags(stat);
+      renderRoster(stat['场景'] || {});
+      renderThreads(stat['暗线'] || {});
+      renderThoughts(stat['场景'] || {});
+    }catch(e){
+      dbg.push('Mvu.getMvuData() 报错: ' + e.message);
+      console.error('[前端卡] 读取 MVU 数据失败', e);
+    }
+
+    updateDebugPanel(dbg);
+  }
+
+  var optHeaderEl = document.getElementById('opt-header');
+  if(optHeaderEl){
+    optHeaderEl.addEventListener('click', function(){
+      var box = document.getElementById('opt-box');
+      if(box) box.classList.toggle('open');
+    });
+  }
+  document.querySelectorAll('.thread-capsule-head').forEach(function(head){
+    head.addEventListener('click', function(){
+      var cap = head.closest('.thread-capsule');
+      if(cap) cap.classList.toggle('open');
+    });
+  });
+
+  (async function(){
+    try{
+      if(typeof waitGlobalInitialized === 'function'){ await waitGlobalInitialized('Mvu'); }
+    }catch(e){ console.error('[前端卡] 等待 Mvu 初始化失败', e); }
+    try{ await updateDisplay(); }catch(e){ updateDebugPanel(['updateDisplay() 首次执行报错: ' + e.message, e.stack || '']); }
+    setInterval(function(){
+      updateDisplay().catch(function(e){ updateDebugPanel(['updateDisplay() 轮询报错: ' + e.message, e.stack || '']); });
+    }, 1000);
+  })();
+
+}catch(_eTop){
+  try{
+    var _dErr = document.getElementById('fk-debug');
+    if(_dErr) _dErr.textContent = '脚本顶层报错: ' + _eTop.message + '\n' + (_eTop.stack || '');
+  }catch(_e1){}
+  if(typeof console !== 'undefined') console.error('[前端卡] 顶层脚本错误', _eTop);
+}
+})();
+</script>
+</body>
+</html>
