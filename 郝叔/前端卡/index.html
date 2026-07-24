@@ -294,11 +294,13 @@ try{
   }
 
   function extractLastTag(rawText, tag){
-    var re = new RegExp('<' + tag + '>([\\s\\S]*?)<\\/' + tag + '>', 'g');
-    var m = rawText.match(re);
-    if(!m) return '';
-    var last = m[m.length - 1];
-    return last.replace(new RegExp('<\\/?' + tag + '>', 'g'), '').trim();
+    var openTag = '<' + tag + '>';
+    var closeTag = '</' + tag + '>';
+    var closeIdx = rawText.lastIndexOf(closeTag);
+    if(closeIdx === -1) return '';
+    var openIdx = rawText.lastIndexOf(openTag, closeIdx);
+    if(openIdx === -1) return '';
+    return rawText.slice(openIdx + openTag.length, closeIdx).trim();
   }
 
   function updateDebugPanel(lines){
