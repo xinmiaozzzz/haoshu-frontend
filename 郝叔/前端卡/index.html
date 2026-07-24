@@ -89,15 +89,11 @@ html,body{background:transparent;margin:0;padding:0}
 .hs-thought .tn{color:var(--accent2);font-weight:600}
 .hs-thought-line{margin-top:3px}
 .hs-thought-line:first-child{margin-top:0}
-
-.fk-debug{width:100%;background:#2a1a1a;border:1px dashed #b23368;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-family:"Courier New",Consolas,monospace;font-size:10.5px;line-height:1.7;color:#e8c8d8;white-space:pre-wrap;word-break:break-all}
-.fk-debug b{color:#ffb0d0}
 </style>
 
 </head>
 <body>
 <div class="fk-root" id="fk-root">
-  <div class="fk-debug" id="fk-debug">诊断面板加载中……</div>
   <div class="mt-box"><div id="mt-body"><div class="mt-empty">等待剧情生成……</div></div></div>
 
   <div class="opt-box" id="opt-box">
@@ -129,8 +125,6 @@ html,body{background:transparent;margin:0;padding:0}
 
 <script>
 (function(){
-  try{ var _d0=document.getElementById('fk-debug'); if(_d0) _d0.textContent = '脚本已开始执行，正在初始化……'; }catch(_e0){}
-
 try{
 
   var CHAR_DEFS = [
@@ -303,54 +297,15 @@ try{
     return rawText.slice(openIdx + openTag.length, closeIdx).trim();
   }
 
-  function updateDebugPanel(lines){
-    var el = document.getElementById('fk-debug');
-    if(el) el.innerHTML = lines.map(function(l){ return esc(l); }).join('\n');
-  }
-
   async function updateDisplay(){
-    var dbg = [];
-    dbg.push('[全局函数检测]');
-    ['getCurrentMessageId','getChatMessages','Mvu','waitGlobalInitialized','triggerSlash','executeSlashCommandsWithOptions','executeSlashCommands'].forEach(function(name){
-      var exists = (typeof window[name] !== 'undefined');
-      dbg.push(name + ' : ' + (exists ? '存在(' + (typeof window[name]) + ')' : '不存在'));
-    });
-
-    var messageId;
-    try{
-      messageId = getCurrentMessageId();
-      dbg.push('getCurrentMessageId() = ' + JSON.stringify(messageId));
-    }catch(e){
-      dbg.push('getCurrentMessageId() 报错: ' + e.message);
-      updateDebugPanel(dbg);
-      return;
-    }
-
-    var messages;
-    try{
-      messages = getChatMessages(messageId);
-      dbg.push('getChatMessages() 返回条数 = ' + (messages ? messages.length : 'null/undefined'));
-    }catch(e){
-      dbg.push('getChatMessages() 报错: ' + e.message);
-      updateDebugPanel(dbg);
-      return;
-    }
-
+    var messageId = getCurrentMessageId();
+    var messages = getChatMessages(messageId);
     var rawText = (messages && messages[0] && messages[0].message) || '';
-    dbg.push('原始文本长度 = ' + rawText.length);
-    dbg.push('原始文本前80字 = ' + JSON.stringify(rawText.slice(0, 80)));
 
     var mainTextFound = extractLastTag(rawText, 'maintext');
     var optionBlockFound = extractLastTag(rawText, 'option');
-    dbg.push('找到 <maintext> = ' + (mainTextFound ? '是，长度' + mainTextFound.length : '否'));
-    dbg.push('找到 <option> = ' + (optionBlockFound ? '是，长度' + optionBlockFound.length : '否'));
-    dbg.push('option原始内容 = ' + JSON.stringify(optionBlockFound));
 
-    if(rawText === lastRawText){
-      dbg.push('（文本与上次相同，跳过重新渲染，仅刷新诊断信息）');
-      updateDebugPanel(dbg);
-      return;
-    }
+    if(rawText === lastRawText) return;
     lastRawText = rawText;
 
     renderMainText(mainTextFound);
@@ -359,18 +314,14 @@ try{
 
     try{
       var mvuData = Mvu.getMvuData({ type: 'message', message_id: messageId });
-      dbg.push('Mvu.getMvuData() 成功，stat_data 存在 = ' + !!(mvuData && mvuData.stat_data));
       var stat = (mvuData && mvuData.stat_data) || {};
       renderTags(stat);
       renderRoster(stat['场景'] || {});
       renderThreads(stat['暗线'] || {});
       renderThoughts(stat['场景'] || {});
     }catch(e){
-      dbg.push('Mvu.getMvuData() 报错: ' + e.message);
       console.error('[前端卡] 读取 MVU 数据失败', e);
     }
-
-    updateDebugPanel(dbg);
   }
 
   var optHeaderEl = document.getElementById('opt-header');
@@ -391,18 +342,14 @@ try{
     try{
       if(typeof waitGlobalInitialized === 'function'){ await waitGlobalInitialized('Mvu'); }
     }catch(e){ console.error('[前端卡] 等待 Mvu 初始化失败', e); }
-    try{ await updateDisplay(); }catch(e){ updateDebugPanel(['updateDisplay() 首次执行报错: ' + e.message, e.stack || '']); }
+    try{ await updateDisplay(); }catch(e){ console.error('[前端卡] 首次渲染失败', e); }
     setInterval(function(){
-      updateDisplay().catch(function(e){ updateDebugPanel(['updateDisplay() 轮询报错: ' + e.message, e.stack || '']); });
+      updateDisplay().catch(function(e){ console.error('[前端卡] 轮询渲染失败', e); });
     }, 1000);
   })();
 
 }catch(_eTop){
-  try{
-    var _dErr = document.getElementById('fk-debug');
-    if(_dErr) _dErr.textContent = '脚本顶层报错: ' + _eTop.message + '\n' + (_eTop.stack || '');
-  }catch(_e1){}
-  if(typeof console !== 'undefined') console.error('[前端卡] 顶层脚本错误', _eTop);
+  console.error('[前端卡] 顶层脚本错误', _eTop);
 }
 })();
 </script>
