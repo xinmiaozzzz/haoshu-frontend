@@ -342,6 +342,7 @@ try{
     var optionBlockFound = extractLastTag(rawText, 'option');
     dbg.push('找到 <maintext> = ' + (mainTextFound ? '是，长度' + mainTextFound.length : '否'));
     dbg.push('找到 <option> = ' + (optionBlockFound ? '是，长度' + optionBlockFound.length : '否'));
+    dbg.push('option原始内容 = ' + JSON.stringify(optionBlockFound));
 
     if(rawText === lastRawText){
       dbg.push('（文本与上次相同，跳过重新渲染，仅刷新诊断信息）');
