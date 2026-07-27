@@ -340,7 +340,12 @@ try{
 
   (async function(){
     try{
-      if(typeof waitGlobalInitialized === 'function'){ await waitGlobalInitialized('Mvu'); }
+      if(typeof waitGlobalInitialized === 'function'){
+        await Promise.race([
+          waitGlobalInitialized('Mvu'),
+          new Promise(function(resolve){ setTimeout(resolve, 3000); })
+        ]);
+      }
     }catch(e){ console.error('[前端卡] 等待 Mvu 初始化失败', e); }
     try{ await updateDisplay(); }catch(e){ console.error('[前端卡] 首次渲染失败', e); }
     setInterval(function(){
