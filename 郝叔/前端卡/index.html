@@ -292,10 +292,14 @@ try{
 
   function renderRoster(scene){
     var root = document.getElementById('roster');
+    var presentNames = String(scene['在场人物'] || '').split(/[,，、\s]+/).map(function(s){ return s.trim(); }).filter(Boolean);
     var items = CHAR_DEFS.map(function(def, i){
       var raw = scene[def.key + '状态'];
       var fields = parseCharState(raw);
-      return { def: def, i: i, fields: fields, present: !!fields };
+      // 双重校验：即使某角色的状态字段没被模型正确清空，只要TA的名字不在"在场人物"名单里，也按不在场处理——
+      // 防止模型漏更新单个角色字段（离场后状态栏卡在旧描述）
+      var present = !!fields && presentNames.indexOf(def.key) !== -1;
+      return { def: def, i: i, fields: present ? fields : null, present: present };
     });
     items.sort(function(a, b){ return (b.present ? 1 : 0) - (a.present ? 1 : 0); });
     root.innerHTML = items.map(function(item){
