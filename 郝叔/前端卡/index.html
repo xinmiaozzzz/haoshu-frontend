@@ -20,6 +20,8 @@ html,body{background:transparent;margin:0;padding:0}
 .mt-box p:last-child{margin-bottom:0}
 .mt-box .dialogue{color:var(--accent);font-weight:500}
 .mt-box .thought{color:var(--accent2);font-style:italic}
+.mt-box p.godview{background:rgba(178,51,104,0.07);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:10px 12px;margin:4px 0 1em}
+.godview-tag{display:block;font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--accent);margin-bottom:4px;text-transform:uppercase}
 .mt-empty{color:var(--t3);font-size:13px;text-align:center;padding:10px 0}
 
 /* ---- 选项 ---- */
@@ -136,6 +138,7 @@ try{
     {key:'何晓月', rel:'郝家成员'},
     {key:'吴彤', rel:'郝家成员'},
     {key:'岑筱薇', rel:'郝家旧识'},
+    {key:'岑青菁', rel:'母亲挚友'},
     {key:'郝小天', rel:'干弟弟'},
     {key:'童佳慧', rel:'岳母'}
   ];
@@ -164,13 +167,17 @@ try{
     return Object.keys(fields).length ? fields : null;
   }
 
+  var GODVIEW_RE = /^[\[［]玩家可见[\]］]\s*/;
+
   function renderMainText(text){
     var box = document.getElementById('mt-body');
     if(!text){ box.innerHTML = '<div class="mt-empty">等待剧情生成……</div>'; return; }
     var html = text.split(/\n+/).map(function(s){ return s.trim(); }).filter(Boolean).map(function(p){
-      var colored = esc(p)
+      var isGodview = GODVIEW_RE.test(p);
+      var colored = esc(p.replace(GODVIEW_RE, ''))
         .replace(/“([^”]*)”/g, '<span class="dialogue">“$1”</span>')
         .replace(/《([^》]*)》/g, '<span class="thought">$1</span>');
+      if(isGodview){ return '<p class="godview"><span class="godview-tag">👁 玩家可见</span>' + colored + '</p>'; }
       return '<p>' + colored + '</p>';
     }).join('');
     box.innerHTML = html || '<div class="mt-empty">等待剧情生成……</div>';
@@ -253,22 +260,15 @@ try{
 
   function renderThreads(dark){
     dark = dark || {};
-    var zhiqing = dark['左京对童佳慧真相知情度'] || '不知情';
-    var tjhLocked = zhiqing === '不知情';
     var rows = [
       {k:'左京与徐琳', v: dark['左京与徐琳']},
-      {k:'左京与岑筱薇', v: dark['左京与岑筱薇']}
+      {k:'左京与岑筱薇', v: dark['左京与岑筱薇']},
+      {k:'白颖郝家沟倒计时', v: dark['白颖郝家沟之行倒计时']},
+      {k:'郝小天生日礼物', v: dark['郝小天生日礼物进度']}
     ];
     var html = rows.filter(function(r){ return r.v !== undefined; }).map(function(r){
       return '<div class="ledger-row"><span class="ledger-key">'+esc(r.k)+'</span><span class="ledger-val">'+esc(r.v)+'</span></div>';
     }).join('');
-    if(dark['童佳慧真实处境'] !== undefined){
-      if(tjhLocked){
-        html += '<div class="ledger-row locked"><span class="ledger-key">童佳慧真实处境</span><span class="ledger-val"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="9" rx="1.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.8"/></svg><span class="bar"></span></span></div>';
-      } else {
-        html += '<div class="ledger-row"><span class="ledger-key">童佳慧真实处境</span><span class="ledger-val">'+esc(dark['童佳慧真实处境'])+'</span></div>';
-      }
-    }
     document.getElementById('ledger').innerHTML = html;
   }
 
