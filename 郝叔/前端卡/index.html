@@ -47,6 +47,24 @@ html,body{background:transparent;margin:0;padding:0}
 .hs-tag .l{color:var(--t4);margin-right:4px;font-size:9.5px}
 .hs-tag .v{color:var(--gold);font-weight:600}
 
+.hs-timeline{display:flex;align-items:flex-start;margin-top:11px;padding:0 2px}
+.hs-tl-step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;min-width:0}
+.hs-tl-line{position:absolute;top:3px;left:-50%;width:100%;height:2px;background:var(--div);z-index:0}
+.hs-tl-step:first-child .hs-tl-line{display:none}
+.hs-tl-step.done .hs-tl-line,.hs-tl-step.current .hs-tl-line{background:var(--gold)}
+.hs-tl-dot{width:8px;height:8px;border-radius:50%;background:var(--div);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--div);z-index:1}
+.hs-tl-step.done .hs-tl-dot{background:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.hs-tl-step.current .hs-tl-dot{background:var(--accent);box-shadow:0 0 0 3px rgba(178,51,104,0.25)}
+.hs-tl-label{font-size:8.5px;color:var(--t4);margin-top:5px;text-align:center;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.hs-tl-step.current .hs-tl-label{color:var(--accent);font-weight:700}
+.hs-tl-step.done .hs-tl-label{color:var(--t3)}
+
+.notify-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-left:5px;flex-shrink:0;animation:pulse-dot 1.4s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(1.35)}}
+.ledger-row.changed{animation:row-flash 2.2s ease-out 1}
+.ledger-row.changed .ledger-val{color:var(--accent);font-weight:700}
+@keyframes row-flash{0%{background:rgba(178,51,104,0.2)}100%{background:transparent}}
+
 .thread-capsule{margin:10px 16px;border:1px solid var(--div);background:var(--div2);border-radius:99px;overflow:hidden;transition:border-radius .3s ease}
 .thread-capsule.open{border-radius:12px}
 .thread-capsule-head{display:flex;align-items:center;gap:8px;padding:9px 15px;font-size:11.5px;font-weight:600;color:var(--t1);cursor:pointer;user-select:none}
@@ -109,6 +127,7 @@ html,body{background:transparent;margin:0;padding:0}
       <div class="hs-dt" id="hs-dt">--/-- --:--</div>
       <div class="hs-loc" id="hs-loc">--</div>
       <div class="hs-tags" id="hs-tags"></div>
+      <div class="hs-timeline" id="hs-timeline"></div>
     </div>
 
     <div class="thread-capsule roster-capsule" id="roster-capsule">
@@ -117,7 +136,7 @@ html,body{background:transparent;margin:0;padding:0}
     </div>
 
     <div class="thread-capsule threads-capsule" id="threads-capsule">
-      <div class="thread-capsule-head">暗线<span class="car">›</span></div>
+      <div class="thread-capsule-head">暗线<span class="notify-dot" id="threads-notify-dot" style="display:none"></span><span class="car">›</span></div>
       <div class="thread-capsule-body"><div class="ledger" id="ledger"></div></div>
     </div>
 
@@ -206,6 +225,18 @@ try{
     });
   }
 
+  var STAGE_LIST = ['初识期','母亲恋爱期','母亲订婚期','母亲婚后','郝家沟时期','真相揭露期','决裂期','出狱后'];
+  var STAGE_SHORT = {'初识期':'初识','母亲恋爱期':'母恋爱','母亲订婚期':'母订婚','母亲婚后':'母婚后','郝家沟时期':'郝家沟','真相揭露期':'真相','决裂期':'决裂','出狱后':'出狱后'};
+
+  function renderTimeline(stage){
+    var el = document.getElementById('hs-timeline');
+    var idx = STAGE_LIST.indexOf(stage);
+    el.innerHTML = STAGE_LIST.map(function(s, i){
+      var cls = i === idx ? 'current' : (idx !== -1 && i < idx ? 'done' : '');
+      return '<div class="hs-tl-step ' + cls + '"><div class="hs-tl-line"></div><div class="hs-tl-dot"></div><div class="hs-tl-label">' + esc(STAGE_SHORT[s] || s) + '</div></div>';
+    }).join('');
+  }
+
   function renderTags(stat){
     var sys = stat['系统'] || {};
     var zj = stat['左京'] || {};
@@ -213,7 +244,6 @@ try{
     document.getElementById('hs-dt').textContent = (sys['日期'] || '--') + ' ' + (sys['时间'] || '--');
     document.getElementById('hs-loc').textContent = sys['当前地点'] || '--';
     var tags = [
-      {v: plot['当前阶段']},
       {l:'对母亲好感', v: zj['对母亲好感度']},
       {l:'对郝叔', v: zj['对郝叔态度']},
       {l:'对白颖', v: zj['与白颖关系']}
@@ -221,6 +251,7 @@ try{
     document.getElementById('hs-tags').innerHTML = tags.filter(function(t){ return t.v !== undefined && t.v !== null && t.v !== ''; }).map(function(t){
       return '<div class="hs-tag">' + (t.l ? '<span class="l">'+esc(t.l)+'</span>' : '') + '<span class="v">'+esc(t.v)+'</span></div>';
     }).join('');
+    renderTimeline(plot['当前阶段']);
   }
 
   function renderRoster(scene){
@@ -258,6 +289,9 @@ try{
     });
   }
 
+  var lastDarkSnapshot = null;
+  var hasUnseenDarkChange = false;
+
   function renderThreads(dark){
     dark = dark || {};
     var rows = [
@@ -266,10 +300,21 @@ try{
       {k:'白颖郝家沟倒计时', v: dark['白颖郝家沟之行倒计时']},
       {k:'郝小天生日礼物', v: dark['郝小天生日礼物进度']}
     ];
-    var html = rows.filter(function(r){ return r.v !== undefined; }).map(function(r){
-      return '<div class="ledger-row"><span class="ledger-key">'+esc(r.k)+'</span><span class="ledger-val">'+esc(r.v)+'</span></div>';
+    var visible = rows.filter(function(r){ return r.v !== undefined; });
+    var html = visible.map(function(r){
+      var changed = lastDarkSnapshot && lastDarkSnapshot[r.k] !== undefined && lastDarkSnapshot[r.k] !== r.v;
+      if(changed) hasUnseenDarkChange = true;
+      return '<div class="ledger-row' + (changed ? ' changed' : '') + '"><span class="ledger-key">'+esc(r.k)+'</span><span class="ledger-val">'+esc(r.v)+'</span></div>';
     }).join('');
     document.getElementById('ledger').innerHTML = html;
+
+    var snap = {};
+    visible.forEach(function(r){ snap[r.k] = r.v; });
+    lastDarkSnapshot = snap;
+
+    var dot = document.getElementById('threads-notify-dot');
+    var capsule = document.getElementById('threads-capsule');
+    if(dot) dot.style.display = (hasUnseenDarkChange && capsule && !capsule.classList.contains('open')) ? '' : 'none';
   }
 
   function renderThoughts(scene){
@@ -334,6 +379,11 @@ try{
   document.querySelectorAll('.thread-capsule-head').forEach(function(head){
     head.addEventListener('click', function(){
       var cap = head.closest('.thread-capsule');
+      if(cap && cap.id === 'threads-capsule' && !cap.classList.contains('open')){
+        hasUnseenDarkChange = false;
+        var dot = document.getElementById('threads-notify-dot');
+        if(dot) dot.style.display = 'none';
+      }
       if(cap) cap.classList.toggle('open');
     });
   });
