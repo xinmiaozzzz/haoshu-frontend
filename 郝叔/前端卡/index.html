@@ -14,6 +14,13 @@ html,body{background:transparent;margin:0;padding:0}
   --hd:linear-gradient(160deg,#f2e6c8,#ecdcb4 50%,#f2e6c8)
 }
 
+/* ---- 阶段转场 ---- */
+.stage-transition{position:relative;margin:0;padding:0;text-align:center;max-height:0;overflow:hidden;opacity:0;background:linear-gradient(90deg,transparent,rgba(178,51,104,0.09),transparent);border-radius:14px;transition:max-height .6s ease,opacity .6s ease,padding .6s ease,margin .6s ease}
+.stage-transition.show{max-height:90px;opacity:1;padding:14px 0;margin-bottom:10px}
+.st-label{font-size:10px;letter-spacing:.28em;color:var(--t4);text-transform:uppercase}
+.st-name{font-size:19px;font-weight:700;color:var(--accent);margin-top:5px;letter-spacing:.06em}
+.st-line{width:36px;height:1px;background:var(--accent2);margin:7px auto;opacity:.6}
+
 /* ---- 正文 ---- */
 .mt-box{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:10px;box-shadow:0 4px 18px rgba(90,70,30,0.08)}
 .mt-box p{margin:0 0 1em;font-size:15px;line-height:1.95;color:var(--t1);word-break:break-word}
@@ -114,6 +121,13 @@ html,body{background:transparent;margin:0;padding:0}
 </head>
 <body>
 <div class="fk-root" id="fk-root">
+  <div class="stage-transition" id="stage-transition">
+    <div class="st-line"></div>
+    <div class="st-label">命运的转折点</div>
+    <div class="st-name" id="st-name"></div>
+    <div class="st-line"></div>
+  </div>
+
   <div class="mt-box"><div id="mt-body"><div class="mt-empty">等待剧情生成……</div></div></div>
 
   <div class="opt-box" id="opt-box">
@@ -237,6 +251,28 @@ try{
     }).join('');
   }
 
+  var stageTransitionChecked = false;
+
+  function checkStageTransition(messageId, currentStage){
+    if(stageTransitionChecked) return;
+    stageTransitionChecked = true;
+    if(!currentStage || messageId === undefined || messageId === null || messageId <= 0) return;
+    try{
+      var prevData = Mvu.getMvuData({ type: 'message', message_id: messageId - 1 });
+      var prevStat = prevData && prevData.stat_data;
+      var prevStage = prevStat && prevStat['剧情'] && prevStat['剧情']['当前阶段'];
+      if(prevStage && prevStage !== currentStage){
+        var el = document.getElementById('stage-transition');
+        var nameEl = document.getElementById('st-name');
+        if(el && nameEl){
+          nameEl.textContent = currentStage;
+          el.classList.add('show');
+          setTimeout(function(){ el.classList.remove('show'); }, 4200);
+        }
+      }
+    }catch(e){ /* 上一条消息没有MVU数据可比较时静默跳过 */ }
+  }
+
   function renderTags(stat){
     var sys = stat['系统'] || {};
     var zj = stat['左京'] || {};
@@ -256,10 +292,14 @@ try{
 
   function renderRoster(scene){
     var root = document.getElementById('roster');
-    root.innerHTML = CHAR_DEFS.map(function(def, i){
+    var items = CHAR_DEFS.map(function(def, i){
       var raw = scene[def.key + '状态'];
       var fields = parseCharState(raw);
-      var present = !!fields;
+      return { def: def, i: i, fields: fields, present: !!fields };
+    });
+    items.sort(function(a, b){ return (b.present ? 1 : 0) - (a.present ? 1 : 0); });
+    root.innerHTML = items.map(function(item){
+      var def = item.def, i = item.i, fields = item.fields, present = item.present;
       var detail = '';
       if(present){
         detail = FIELD_LABELS.filter(function(k){ return fields[k] !== undefined; }).map(function(k){
@@ -360,6 +400,7 @@ try{
     try{
       var mvuData = Mvu.getMvuData({ type: 'message', message_id: messageId });
       var stat = (mvuData && mvuData.stat_data) || {};
+      checkStageTransition(messageId, stat['剧情'] && stat['剧情']['当前阶段']);
       renderTags(stat);
       renderRoster(stat['场景'] || {});
       renderThreads(stat['暗线'] || {});
